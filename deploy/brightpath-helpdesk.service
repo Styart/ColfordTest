@@ -1,0 +1,22 @@
+# systemd unit for the hosted demo. Install as /etc/systemd/system/brightpath-helpdesk.service
+# The app lives in /opt/brightpath-helpdesk with its own virtual environment and a .env file (mode 600).
+[Unit]
+Description=BrightPath AI help desk (demo)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=helpdesk
+WorkingDirectory=/opt/brightpath-helpdesk
+ExecStart=/opt/brightpath-helpdesk/.venv/bin/python server.py --host 0.0.0.0 --port 8200
+Restart=on-failure
+RestartSec=5
+# Keep the demo small and boxed in: it cannot use much memory or write outside its own temp folder.
+MemoryMax=200M
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

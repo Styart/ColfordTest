@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BrightPath Help Desk</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+  textarea { width: 100%; box-sizing: border-box; font: inherit; padding: .5rem; }
+  button { font: inherit; padding: .4rem 1rem; }
+  .mock { background: #fff3cd; border: 1px solid #e0c060; padding: .3rem .6rem; font-weight: bold; }
+  .error { background: #fde2e2; border: 1px solid #d88; padding: .6rem; }
+  .notfound { background: #eef; border: 1px solid #99c; padding: .6rem; }
+  blockquote { margin: .3rem 0 .8rem; padding-left: .8rem; border-left: 3px solid #ccc; color: #444; }
+  #model { color: #666; font-size: .9rem; }
+</style>
+</head>
+<body>
+<h1>BrightPath Help Desk</h1>
+<p id="model">Loading model info...</p>
+
+<form id="form">
+  <textarea id="question" rows="3" placeholder="e.g. When is the group coaching session?"></textarea>
+  <p><label><input type="checkbox" id="simulate"> Simulate model failure (sends the request to an unreachable address)</label></p>
+  <button id="ask">Ask</button>
+</form>
+
+<div id="result"></div>
+
+<script>
+const result = document.getElementById("result");
+
+// Small helper: create an element with text (textContent, so model output can never inject HTML).
+function add(tag, text, className) {
+  const el = document.createElement(tag);
+  el.textContent = text;
+  if (className) el.className = className;
+  result.appendChild(el);
+  return el;
+}
+
+fetch("/api/config").then(r => r.json()).then(cfg => {
+  const el = document.getElementById("model");
+  el.textContent = "Model: " + cfg.model + (cfg.configured ? "" : " (not configured - questions will fail)");
+  if (cfg.mock) el.className = "mock";
+}).catch(() => { document.getElementById("model").textContent = "Could not load model info."; });
+
+document.getElementById("form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  result.textContent = "Thinking...";
+  const body = {
+    question: document.getElementById("question").value,
+    simulate_failure: document.getElementById("simulate").checked,
+  };
+  let data;
+  try {
+    const response = await fetch("/api/ask", {
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body),
+    });
+    data = await response.json();
+  } catch (err) {
+    result.textContent = "";
+    add("p", "Could not reach the help desk server. Is server.py still running?", "error");
+    return;
+  }
+  result.textContent = "";
+  if (data.mock) add("p", "MOCK MODE - answers come from a keyword matcher, not a real language model.", "mock");
+  if (data.error) {
+    add("p", data.message + (data.simulated_failure ? " (This failure was simulated on purpose.)" : ""), "error");
+    return;
+  }
+  add("h2", "Answer");
+  add("p", data.answer, data.answered ? "" : "notfound");
+  if (data.answer_replaced) add("p", "Shown as direct quotes: the model's own wording included a detail the documents do not back up.", "notfound");
+  if (data.sources.length) add("h3", "Supported by");
+  for (const source of data.sources) {
+    add("strong", source.title + " (" + source.file + ")");
+    add("blockquote", source.quote);
+  }
+});
+</script>
+</body>
+</html>

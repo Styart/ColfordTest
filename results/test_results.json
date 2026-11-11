@@ -1,0 +1,72 @@
+{
+  "run_at": "2026-11-11T08:12:40+00:00",
+  "model": "claude-haiku-5-5 (Anthropic API)",
+  "mock": false,
+  "passed": 3,
+  "cases": [
+    {
+      "name": "Supported question",
+      "question": "When is the group coaching session?",
+      "simulate_failure": false,
+      "expected": "an answer with at least one document source",
+      "status": 200,
+      "passed": true,
+      "result": {
+        "answered": true,
+        "answer": "The group coaching session takes place every Tuesday at 16:00 UTC. The link appears on the Coaching page 30 minutes before the session.",
+        "sources": [
+          {
+            "doc": "doc2",
+            "title": "Document 2 — Coaching and feedback",
+            "file": "02-coaching-and-feedback.md",
+            "quote": "A group coaching session takes place every Tuesday at 16:00 UTC."
+          },
+          {
+            "doc": "doc2",
+            "title": "Document 2 — Coaching and feedback",
+            "file": "02-coaching-and-feedback.md",
+            "quote": "The link appears on the Coaching page 30 minutes before the session."
+          }
+        ],
+        "rejected_sources": 0,
+        "answer_replaced": false,
+        "model": "claude-haiku-5-5 (Anthropic API)",
+        "mock": false,
+        "simulated_failure": false
+      }
+    },
+    {
+      "name": "Unsupported question",
+      "question": "What is your refund policy?",
+      "simulate_failure": false,
+      "expected": "the fixed 'not available' message and no sources",
+      "status": 200,
+      "passed": true,
+      "result": {
+        "answered": false,
+        "answer": "Sorry, that information is not available in the supplied documents. Please contact support@brightpath.example (Monday to Friday, 09:00-17:00 UTC).",
+        "sources": [],
+        "rejected_sources": 0,
+        "answer_replaced": false,
+        "model": "claude-haiku-5-5 (Anthropic API)",
+        "mock": false,
+        "simulated_failure": false
+      }
+    },
+    {
+      "name": "API failure",
+      "question": "When is the group coaching session?",
+      "simulate_failure": true,
+      "expected": "a clear error message and a non-200 status",
+      "status": 503,
+      "passed": true,
+      "result": {
+        "error": "unreachable",
+        "message": "The language model service at http://127.0.0.1:9 could not be reached. Check your internet connection and try again.",
+        "model": "claude-haiku-5-5 (Anthropic API)",
+        "mock": false,
+        "simulated_failure": true
+      }
+    }
+  ]
+}
